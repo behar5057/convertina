@@ -236,6 +236,19 @@
             font-size: 0.9rem;
             text-align: center;
         }
+
+        .preview-area {
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .preview-image {
+            max-width: 300px;
+            max-height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -248,36 +261,56 @@
         <div class="content">
             <div class="info-box">
                 <strong>🚀 Demo Version</strong><br>
-                This shows the user interface. For actual file conversion, we need a backend server.
+                Upload any file type and see the conversion process in action!
             </div>
             
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📁</div>
                 <h3>Drag & Drop Your File</h3>
                 <p>or click to browse</p>
-                <input type="file" id="fileInput" style="display: none;" accept=".txt,.pdf">
+                <input type="file" id="fileInput" style="display: none;">
             </div>
             
             <div class="file-info" id="fileInfo">
                 <strong>Selected File:</strong> <span id="fileName"></span> • <span id="fileSize"></span> • <span id="fileType"></span>
             </div>
+
+            <div class="preview-area" id="previewArea">
+                <h4>File Preview:</h4>
+                <img id="previewImage" class="preview-image" src="" alt="File preview">
+            </div>
             
             <div class="conversion-options" id="conversionOptions">
                 <h3 style="text-align: center; margin-bottom: 20px; color: #fb7185;">Choose Output Format</h3>
                 <div class="format-selection">
-                    <div class="format-option" data-format="txt">
-                        <div class="format-icon">📝</div>
-                        <div>TXT</div>
-                        <small>Text File</small>
+                    <div class="format-option" data-format="png">
+                        <div class="format-icon">🖼️</div>
+                        <div>PNG</div>
+                        <small>Lossless Image</small>
+                    </div>
+                    <div class="format-option" data-format="jpg">
+                        <div class="format-icon">📷</div>
+                        <div>JPG</div>
+                        <small>Compressed Image</small>
                     </div>
                     <div class="format-option" data-format="pdf">
                         <div class="format-icon">📄</div>
                         <div>PDF</div>
                         <small>Document</small>
                     </div>
+                    <div class="format-option" data-format="txt">
+                        <div class="format-icon">📝</div>
+                        <div>TXT</div>
+                        <small>Text File</small>
+                    </div>
+                    <div class="format-option" data-format="webp">
+                        <div class="format-icon">🌐</div>
+                        <div>WEBP</div>
+                        <small>Web Format</small>
+                    </div>
                 </div>
                 <div class="demo-note">
-                    💡 In this demo: Text files can be converted to PDF format
+                    💡 This demo shows the conversion process. For actual file conversion, Connectina uses backend processing.
                 </div>
             </div>
             
@@ -382,6 +415,8 @@ ${550 + textContent.length}
             const fileName = document.getElementById('fileName');
             const fileSize = document.getElementById('fileSize');
             const fileType = document.getElementById('fileType');
+            const previewArea = document.getElementById('previewArea');
+            const previewImage = document.getElementById('previewImage');
             const conversionOptions = document.getElementById('conversionOptions');
             const convertButton = document.getElementById('convertButton');
             const downloadButton = document.getElementById('downloadButton');
@@ -394,7 +429,7 @@ ${550 + textContent.length}
             let selectedFile = null;
             let selectedFormat = null;
 
-            // File selection
+            // File selection - ALL FILES ALLOWED
             uploadArea.addEventListener('click', () => fileInput.click());
             
             uploadArea.addEventListener('dragover', (e) => {
@@ -421,12 +456,6 @@ ${550 + textContent.length}
             });
             
             function handleFileSelect(file) {
-                // Only allow text files for this demo
-                if (!file.type.startsWith('text/') && file.type !== 'application/pdf') {
-                    alert('⚠️ For this demo, please upload a text file (.txt) or PDF file.');
-                    return;
-                }
-                
                 selectedFile = file;
                 
                 // Show file info
@@ -434,6 +463,18 @@ ${550 + textContent.length}
                 fileSize.textContent = formatFileSize(file.size);
                 fileType.textContent = getFileType(file.name);
                 fileInfo.style.display = 'block';
+                
+                // Show preview for images
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewArea.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewArea.style.display = 'none';
+                }
                 
                 // Update upload area
                 uploadArea.innerHTML = `
@@ -490,7 +531,7 @@ ${550 + textContent.length}
                                 
                                 // Create the converted file
                                 setTimeout(() => {
-                                    createConvertedFile(e.target.result);
+                                    createConvertedFile();
                                 }, 500);
                             }
                             
@@ -499,12 +540,11 @@ ${550 + textContent.length}
                         }, 200);
                     };
                     
-                    if (selectedFile.type === 'application/pdf') {
-                        // For PDF files, read as array buffer
-                        fileReader.readAsArrayBuffer(selectedFile);
-                    } else {
-                        // For text files, read as text
+                    // Try to read as text first, fallback to data URL
+                    if (selectedFile.type.startsWith('text/') || selectedFile.type === 'application/pdf') {
                         fileReader.readAsText(selectedFile);
+                    } else {
+                        fileReader.readAsDataURL(selectedFile);
                     }
                     
                 } catch (error) {
@@ -514,39 +554,72 @@ ${550 + textContent.length}
                 }
             });
             
-            function createConvertedFile(originalContent) {
+            function createConvertedFile() {
                 const originalName = selectedFile.name.split('.')[0];
                 const newFileName = `${originalName}_converted.${selectedFormat}`;
                 
                 let blob;
                 let mimeType = '';
                 
+                // Determine appropriate MIME type
+                switch(selectedFormat) {
+                    case 'png':
+                        mimeType = 'image/png';
+                        break;
+                    case 'jpg':
+                        mimeType = 'image/jpeg';
+                        break;
+                    case 'pdf':
+                        mimeType = 'application/pdf';
+                        break;
+                    case 'webp':
+                        mimeType = 'image/webp';
+                        break;
+                    case 'txt':
+                    default:
+                        mimeType = 'text/plain';
+                }
+                
+                // Create appropriate content based on conversion
                 if (selectedFormat === 'pdf') {
-                    // Convert to PDF
-                    mimeType = 'application/pdf';
-                    if (typeof originalContent === 'string') {
-                        // Text to PDF
-                        blob = textToPDF(originalContent, newFileName);
-                    } else {
-                        // PDF to PDF (just return original)
-                        blob = new Blob([originalContent], { type: mimeType });
-                    }
-                } else if (selectedFormat === 'txt') {
-                    // Convert to text
-                    mimeType = 'text/plain';
-                    if (selectedFile.type === 'application/pdf') {
-                        // PDF to text - create a simple text representation
-                        const textContent = `PDF File: ${selectedFile.name}
-Size: ${formatFileSize(selectedFile.size)}
+                    // Create a PDF with file information
+                    const pdfContent = `File converted by Convertina
 
-[PDF content cannot be extracted in browser demo]
+Original File: ${selectedFile.name}
+Original Type: ${selectedFile.type}
+File Size: ${formatFileSize(selectedFile.size)}
+Converted To: PDF
+Conversion Date: ${new Date().toLocaleString()}
 
-In a full version, Convertina would use PyMuPDF on the backend to extract text from PDF files while preserving formatting and layout.`;
-                        blob = new Blob([textContent], { type: mimeType });
-                    } else {
-                        // Text to text - keep original content
-                        blob = new Blob([originalContent], { type: mimeType });
-                    }
+In a full version, Convertina would use specialized backend processing to properly convert your file while preserving all content and quality.
+
+Thank you for using Convertina! 🌸`;
+                    blob = textToPDF(pdfContent, newFileName);
+                } else {
+                    // For other formats, create a demo file
+                    const content = `Convertina File Conversion Demo
+
+Original File: ${selectedFile.name}
+File Type: ${selectedFile.type}
+File Size: ${formatFileSize(selectedFile.size)}
+Converted To: ${selectedFormat.toUpperCase()}
+Conversion Date: ${new Date().toLocaleString()}
+
+This demonstrates how Convertina would convert your file.
+
+In a production environment:
+• Your file would be uploaded to secure servers
+• Specialized tools would convert the actual content
+• Original quality and content would be preserved
+• You'd receive the properly converted file
+
+Format-specific processing:
+${selectedFormat === 'png' || selectedFormat === 'jpg' || selectedFormat === 'webp' ? '• Image processing with Pillow/Python\n• Quality preservation\n• Format optimization' : ''}
+${selectedFormat === 'txt' ? '• Text extraction and formatting\n• Encoding conversion\n• Content preservation' : ''}
+
+Thank you for trying Convertina! 🌸`;
+                    
+                    blob = new Blob([content], { type: mimeType });
                 }
                 
                 // Create download URL
@@ -583,8 +656,18 @@ In a full version, Convertina would use PyMuPDF on the backend to extract text f
             function getFileType(filename) {
                 const ext = filename.split('.').pop().toLowerCase();
                 const types = {
+                    'jpg': 'JPEG Image',
+                    'jpeg': 'JPEG Image',
+                    'png': 'PNG Image',
+                    'gif': 'GIF Image',
+                    'webp': 'WebP Image',
+                    'pdf': 'PDF Document',
                     'txt': 'Text File',
-                    'pdf': 'PDF Document'
+                    'doc': 'Word Document',
+                    'docx': 'Word Document',
+                    'mp4': 'MP4 Video',
+                    'mp3': 'MP3 Audio',
+                    'zip': 'ZIP Archive'
                 };
                 return types[ext] || `${ext.toUpperCase()} File`;
             }
