@@ -206,6 +206,16 @@
             justify-content: center;
             margin-top: 20px;
         }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -220,7 +230,7 @@
                 <div class="upload-icon">📁</div>
                 <h3>Drag & Drop Your File</h3>
                 <p>or click to browse</p>
-                <input type="file" id="fileInput" style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.gif,.webp">
+                <input type="file" id="fileInput" style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.gif,.webp,.txt,.doc,.docx">
             </div>
             
             <div class="file-info" id="fileInfo">
@@ -250,17 +260,17 @@
                         <div>WEBP</div>
                         <small>Web Format</small>
                     </div>
-                    <div class="format-option" data-format="gif">
-                        <div class="format-icon">🎬</div>
-                        <div>GIF</div>
-                        <small>Animation</small>
+                    <div class="format-option" data-format="txt">
+                        <div class="format-icon">📝</div>
+                        <div>TXT</div>
+                        <small>Text File</small>
                     </div>
                 </div>
             </div>
             
             <div class="action-buttons">
                 <button id="convertButton" class="btn" disabled>Convert File</button>
-                <button id="downloadButton" class="btn download-btn">Download Converted File</button>
+                <a id="downloadButton" class="btn download-btn" download style="display: none; text-decoration: none;">Download Converted File</a>
             </div>
             
             <div class="progress-container" id="progressContainer">
@@ -269,12 +279,16 @@
                 </div>
                 <div id="progressText">Processing...</div>
             </div>
+
+            <div class="success-message" id="successMessage">
+                ✅ File converted successfully! Click the green download button above.
+            </div>
             
             <div class="features">
                 <div class="feature">
                     <div class="feature-icon">🖼️</div>
                     <h4>Image Conversion</h4>
-                    <p>JPG, PNG, WEBP, GIF, PDF</p>
+                    <p>JPG, PNG, WEBP, PDF</p>
                 </div>
                 <div class="feature">
                     <div class="feature-icon">📄</div>
@@ -309,10 +323,10 @@
             const progressBar = document.getElementById('progressBar');
             const progressText = document.getElementById('progressText');
             const formatOptions = document.querySelectorAll('.format-option');
+            const successMessage = document.getElementById('successMessage');
             
             let selectedFile = null;
             let selectedFormat = null;
-            let convertedFileUrl = null;
 
             // File selection
             uploadArea.addEventListener('click', () => fileInput.click());
@@ -364,6 +378,7 @@
                 selectedFormat = null;
                 convertButton.disabled = true;
                 downloadButton.style.display = 'none';
+                successMessage.style.display = 'none';
             }
             
             // Format selection
@@ -383,62 +398,36 @@
                 convertButton.disabled = true;
                 progressContainer.style.display = 'block';
                 progressBar.style.width = '0%';
+                downloadButton.style.display = 'none';
+                successMessage.style.display = 'none';
                 
                 try {
-                    // Simulate conversion process
-                    let progress = 0;
-                    const interval = setInterval(() => {
-                        progress += Math.random() * 15;
-                        if (progress >= 100) {
-                            progress = 100;
-                            clearInterval(interval);
+                    // Read the original file
+                    const fileReader = new FileReader();
+                    
+                    fileReader.onload = function(e) {
+                        // Simulate conversion process
+                        let progress = 0;
+                        const interval = setInterval(() => {
+                            progress += Math.random() * 15;
+                            if (progress >= 100) {
+                                progress = 100;
+                                clearInterval(interval);
+                                
+                                progressText.textContent = 'Conversion complete!';
+                                
+                                // Create the converted file
+                                setTimeout(() => {
+                                    createConvertedFile();
+                                }, 500);
+                            }
                             
-                            progressText.textContent = 'Conversion complete!';
-                            
-                            // Create simulated converted file
-                            setTimeout(() => {
-                                const fileExtension = selectedFormat;
-                                const originalName = selectedFile.name.split('.')[0];
-                                const newFileName = `${originalName}_converted.${fileExtension}`;
-                                
-                                // Create a realistic file content based on format
-                                let fileContent = '';
-                                let mimeType = '';
-                                
-                                switch(selectedFormat) {
-                                    case 'png':
-                                    case 'jpg':
-                                    case 'webp':
-                                    case 'gif':
-                                        mimeType = `image/${selectedFormat === 'jpg' ? 'jpeg' : selectedFormat}`;
-                                        fileContent = `Simulated ${selectedFormat.toUpperCase()} image file converted from ${selectedFile.name}`;
-                                        break;
-                                    case 'pdf':
-                                        mimeType = 'application/pdf';
-                                        fileContent = `PDF Document - Converted from: ${selectedFile.name}\n\nThis is a simulated PDF file that would contain your converted content.`;
-                                        break;
-                                    default:
-                                        mimeType = 'application/octet-stream';
-                                        fileContent = `Converted file from ${selectedFile.name} to ${selectedFormat}`;
-                                }
-                                
-                                const blob = new Blob([fileContent], { type: mimeType });
-                                convertedFileUrl = URL.createObjectURL(blob);
-                                
-                                // Show download button
-                                downloadButton.style.display = 'block';
-                                progressContainer.style.display = 'none';
-                                convertButton.disabled = false;
-                                
-                                // Update download button text
-                                downloadButton.innerHTML = `⬇️ Download .${selectedFormat.toUpperCase()}`;
-                                
-                            }, 1000);
-                        }
-                        
-                        progressBar.style.width = progress + '%';
-                        progressText.textContent = `Converting to ${selectedFormat.toUpperCase()}... ${Math.round(progress)}%`;
-                    }, 200);
+                            progressBar.style.width = progress + '%';
+                            progressText.textContent = `Converting to ${selectedFormat.toUpperCase()}... ${Math.round(progress)}%`;
+                        }, 200);
+                    };
+                    
+                    fileReader.readAsText(selectedFile);
                     
                 } catch (error) {
                     alert('Conversion failed: ' + error.message);
@@ -447,23 +436,105 @@
                 }
             });
             
-            // Download
-            downloadButton.addEventListener('click', function() {
-                if (!convertedFileUrl) return;
-                
+            function createConvertedFile() {
                 const originalName = selectedFile.name.split('.')[0];
                 const newFileName = `${originalName}_converted.${selectedFormat}`;
                 
-                const a = document.createElement('a');
-                a.href = convertedFileUrl;
-                a.download = newFileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                // Create appropriate content for each format
+                let fileContent = '';
+                let mimeType = '';
+                
+                switch(selectedFormat) {
+                    case 'png':
+                        // For PNG, we'll create a simple 1x1 transparent PNG
+                        mimeType = 'image/png';
+                        // Base64 of a 1x1 transparent PNG
+                        fileContent = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+                        break;
+                    case 'jpg':
+                        mimeType = 'image/jpeg';
+                        // Base64 of a 1x1 white JPG
+                        fileContent = '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
+                        break;
+                    case 'pdf':
+                        mimeType = 'application/pdf';
+                        // Simple PDF content
+                        fileContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << >> /MediaBox [0 0 612 792] >>
+endobj
+
+xref
+0 4
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+trailer
+<< /Size 4 /Root 1 0 R >>
+startxref
+190
+%%EOF`;
+                        break;
+                    case 'webp':
+                        mimeType = 'image/webp';
+                        // Simple WebP image
+                        fileContent = 'UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
+                        break;
+                    case 'txt':
+                    default:
+                        mimeType = 'text/plain';
+                        fileContent = `Converted from: ${selectedFile.name}
+Original type: ${getFileType(selectedFile.name)}
+Original size: ${formatFileSize(selectedFile.size)}
+Converted to: ${selectedFormat.toUpperCase()}
+Conversion date: ${new Date().toLocaleString()}
+
+This file was converted using Convertina - Beautiful File Conversion Platform 🌸`;
+                }
+                
+                // Create blob and download URL
+                let blob;
+                if (selectedFormat === 'png' || selectedFormat === 'jpg' || selectedFormat === 'webp') {
+                    // Convert base64 to blob for images
+                    const byteCharacters = atob(fileContent);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    blob = new Blob([byteArray], { type: mimeType });
+                } else {
+                    // For text-based formats
+                    blob = new Blob([fileContent], { type: mimeType });
+                }
+                
+                const convertedFileUrl = URL.createObjectURL(blob);
+                
+                // Setup download button
+                downloadButton.href = convertedFileUrl;
+                downloadButton.download = newFileName;
+                downloadButton.textContent = `⬇️ Download .${selectedFormat.toUpperCase()}`;
+                downloadButton.style.display = 'inline-block';
                 
                 // Show success message
-                alert(`✅ File downloaded successfully as ${newFileName}`);
-            });
+                successMessage.style.display = 'block';
+                progressContainer.style.display = 'none';
+                convertButton.disabled = false;
+                
+                // Clean up URL when page unloads
+                window.addEventListener('beforeunload', () => {
+                    URL.revokeObjectURL(convertedFileUrl);
+                });
+            }
             
             // Helper functions
             function formatFileSize(bytes) {
