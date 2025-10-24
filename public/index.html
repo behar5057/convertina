@@ -230,6 +230,16 @@
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
+
+        .info-message {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -244,7 +254,7 @@
                 <div class="upload-icon">📁</div>
                 <h3>Drag & Drop Your File</h3>
                 <p>or click to browse</p>
-                <input type="file" id="fileInput" style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.gif,.webp,.txt,.doc,.docx">
+                <input type="file" id="fileInput" style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.txt,.doc,.docx,.gif,.webp">
             </div>
             
             <div class="file-info" id="fileInfo">
@@ -274,16 +284,19 @@
                         <div>PDF</div>
                         <small>Document</small>
                     </div>
-                    <div class="format-option" data-format="webp">
-                        <div class="format-icon">🌐</div>
-                        <div>WEBP</div>
-                        <small>Web Format</small>
-                    </div>
                     <div class="format-option" data-format="txt">
                         <div class="format-icon">📝</div>
                         <div>TXT</div>
                         <small>Text File</small>
                     </div>
+                    <div class="format-option" data-format="webp">
+                        <div class="format-icon">🌐</div>
+                        <div>WEBP</div>
+                        <small>Web Format</small>
+                    </div>
+                </div>
+                <div class="info-message">
+                    💡 For demonstration: Text files will be converted properly. Other formats show the conversion process.
                 </div>
             </div>
             
@@ -435,25 +448,37 @@
                 successMessage.style.display = 'none';
                 
                 try {
-                    // Simulate conversion process
-                    let progress = 0;
-                    const interval = setInterval(() => {
-                        progress += Math.random() * 15;
-                        if (progress >= 100) {
-                            progress = 100;
-                            clearInterval(interval);
+                    // Read the original file content
+                    const fileReader = new FileReader();
+                    
+                    fileReader.onload = function(e) {
+                        // Simulate conversion process
+                        let progress = 0;
+                        const interval = setInterval(() => {
+                            progress += Math.random() * 15;
+                            if (progress >= 100) {
+                                progress = 100;
+                                clearInterval(interval);
+                                
+                                progressText.textContent = 'Conversion complete!';
+                                
+                                // Create the converted file with original content
+                                setTimeout(() => {
+                                    createConvertedFile(e.target.result);
+                                }, 500);
+                            }
                             
-                            progressText.textContent = 'Conversion complete!';
-                            
-                            // Create the converted file
-                            setTimeout(() => {
-                                createConvertedFile();
-                            }, 500);
-                        }
-                        
-                        progressBar.style.width = progress + '%';
-                        progressText.textContent = `Converting to ${selectedFormat.toUpperCase()}... ${Math.round(progress)}%`;
-                    }, 200);
+                            progressBar.style.width = progress + '%';
+                            progressText.textContent = `Converting to ${selectedFormat.toUpperCase()}... ${Math.round(progress)}%`;
+                        }, 200);
+                    };
+                    
+                    // Read as appropriate type
+                    if (selectedFile.type.startsWith('text/') || selectedFile.type === 'application/pdf') {
+                        fileReader.readAsText(selectedFile);
+                    } else {
+                        fileReader.readAsDataURL(selectedFile);
+                    }
                     
                 } catch (error) {
                     alert('Conversion failed: ' + error.message);
@@ -462,66 +487,68 @@
                 }
             });
             
-            function createConvertedFile() {
+            function createConvertedFile(originalContent) {
                 const originalName = selectedFile.name.split('.')[0];
                 const newFileName = `${originalName}_converted.${selectedFormat}`;
                 
                 let blob;
                 let mimeType = '';
                 
+                // Determine appropriate MIME type
                 switch(selectedFormat) {
                     case 'png':
-                        // Create a beautiful PNG image with content
                         mimeType = 'image/png';
-                        blob = createSampleImage('png');
                         break;
                     case 'jpg':
-                        // Create a beautiful JPG image with content
                         mimeType = 'image/jpeg';
-                        blob = createSampleImage('jpeg');
-                        break;
-                    case 'webp':
-                        // Create a beautiful WebP image with content
-                        mimeType = 'image/webp';
-                        blob = createSampleImage('webp');
                         break;
                     case 'pdf':
-                        // Create a PDF with actual content
                         mimeType = 'application/pdf';
-                        blob = createSamplePDF();
+                        break;
+                    case 'webp':
+                        mimeType = 'image/webp';
                         break;
                     case 'txt':
                     default:
-                        // Create a text file with detailed content
                         mimeType = 'text/plain';
-                        const textContent = `CONVERTINA FILE CONVERSION
-============================
+                }
+                
+                // For text files, we can actually convert the content
+                if (selectedFile.type.startsWith('text/') && selectedFormat === 'txt') {
+                    // Real text-to-text conversion - keep original content
+                    blob = new Blob([originalContent], { type: mimeType });
+                }
+                else if (selectedFormat === 'txt') {
+                    // Convert other files to text (extract text content)
+                    const textContent = `File: ${selectedFile.name}
+Type: ${selectedFile.type}
+Size: ${formatFileSize(selectedFile.size)}
+Conversion: ${getFileExtension(selectedFile.name)} → txt
+
+[Original binary content cannot be displayed as text]
+This file has been converted from ${getFileExtension(selectedFile.name)} to TXT format.
+
+For actual file format conversion, Connectina would use specialized backend processing to properly convert between formats while preserving the original content and quality.`;
+                    blob = new Blob([textContent], { type: mimeType });
+                }
+                else {
+                    // For other conversions, we return the original file with new extension
+                    // (In a real app, this would be processed by a backend)
+                    const message = `This demonstrates how Convertina would work.
 
 Original File: ${selectedFile.name}
-File Type: ${getFileType(selectedFile.name)}
+Converted To: ${selectedFormat}
 File Size: ${formatFileSize(selectedFile.size)}
-Converted To: ${selectedFormat.toUpperCase()}
-Conversion Date: ${new Date().toLocaleString()}
 
-CONVERSION DETAILS:
--------------------
-• This file was successfully converted using Convertina
-• Original content has been preserved and enhanced
-• Conversion completed without errors
-• File is ready for use
+In a production environment, Convertina would:
+1. Upload your file to a secure server
+2. Use specialized libraries (Pillow for images, PyMuPDF for PDFs, FFmpeg for video/audio)
+3. Convert the actual file content while preserving quality
+4. Return the properly converted file
 
-THANK YOU FOR USING CONVERTINA! 🌸
-Beautiful File Conversion Platform
-
-Features:
-✓ Fast conversion
-✓ Secure processing  
-✓ Multiple formats
-✓ Beautiful design
-
-Need help? Visit our website for support.
-`;
-                        blob = new Blob([textContent], { type: mimeType });
+For this demo, we're showing the conversion process.`;
+                    
+                    blob = new Blob([message], { type: 'text/plain' });
                 }
                 
                 // Create download URL
@@ -530,7 +557,7 @@ Need help? Visit our website for support.
                 // Setup download button
                 downloadButton.href = convertedFileUrl;
                 downloadButton.download = newFileName;
-                downloadButton.textContent = `⬇️ Download .${selectedFormat.toUpperCase()} (${formatFileSize(blob.size)})`;
+                downloadButton.textContent = `⬇️ Download .${selectedFormat.toUpperCase()}`;
                 downloadButton.style.display = 'inline-block';
                 
                 // Show success message
@@ -546,105 +573,6 @@ Need help? Visit our website for support.
                 });
             }
             
-            function createSampleImage(format) {
-                // Create a canvas with actual content
-                const canvas = document.createElement('canvas');
-                canvas.width = 400;
-                canvas.height = 300;
-                const ctx = canvas.getContext('2d');
-                
-                // Draw background gradient
-                const gradient = ctx.createLinearGradient(0, 0, 400, 300);
-                gradient.addColorStop(0, '#ffb6c1');
-                gradient.addColorStop(1, '#dda0dd');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 400, 300);
-                
-                // Draw text
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🌸 Convertina', 200, 80);
-                
-                ctx.font = '16px Arial';
-                ctx.fillText('Beautiful File Conversion', 200, 110);
-                ctx.fillText(`Format: ${format.toUpperCase()}`, 200, 140);
-                ctx.fillText('Your file has been converted!', 200, 170);
-                
-                // Draw a cute shape
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.beginPath();
-                ctx.arc(200, 220, 40, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Convert to blob
-                return new Promise(resolve => {
-                    canvas.toBlob(blob => resolve(blob), `image/${format}`, 0.9);
-                });
-            }
-            
-            function createSamplePDF() {
-                // Create a PDF with actual content using jsPDF
-                const pdfContent = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-
-3 0 obj
-<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
-endobj
-
-4 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-
-5 0 obj
-<< /Length 200 >>
-stream
-BT
-/F1 24 Tf
-50 700 Td
-(🌸 Convertina) Tj
-0 -40 Td
-/F1 16 Tf
-(Beautiful File Conversion Platform) Tj
-0 -30 Td
-(Original File: ${selectedFile.name}) Tj
-0 -25 Td
-(File Size: ${formatFileSize(selectedFile.size)}) Tj
-0 -25 Td
-(Converted To: PDF) Tj
-0 -25 Td
-(Conversion Date: ${new Date().toLocaleDateString()}) Tj
-0 -40 Td
-(Your file has been successfully converted!) Tj
-0 -25 Td
-(Thank you for using Convertina! 🌸) Tj
-ET
-endstream
-endobj
-
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000208 00000 n 
-0000000300 00000 n 
-trailer
-<< /Size 6 /Root 1 0 R >>
-startxref
-550
-%%EOF`;
-                
-                return new Blob([pdfContent], { type: 'application/pdf' });
-            }
-            
             // Helper functions
             function formatFileSize(bytes) {
                 if (bytes === 0) return '0 Bytes';
@@ -655,7 +583,7 @@ startxref
             }
             
             function getFileType(filename) {
-                const ext = filename.split('.').pop().toLowerCase();
+                const ext = getFileExtension(filename);
                 const types = {
                     'jpg': 'JPEG Image',
                     'jpeg': 'JPEG Image',
@@ -668,6 +596,10 @@ startxref
                     'docx': 'Word Document'
                 };
                 return types[ext] || `${ext.toUpperCase()} File`;
+            }
+            
+            function getFileExtension(filename) {
+                return filename.split('.').pop().toLowerCase();
             }
         });
     </script>
