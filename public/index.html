@@ -504,6 +504,7 @@
             color: var(--primary);
             text-decoration: none;
             transition: color 0.3s ease;
+            cursor: pointer;
         }
         
         .footer-links a:hover {
@@ -602,8 +603,124 @@
             display: none;
         }
         
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+        
+        .modal-header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 30px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .close-modal:hover {
+            transform: scale(1.2);
+        }
+        
+        .modal-body {
+            padding: 30px;
+            line-height: 1.6;
+            color: var(--dark);
+        }
+        
+        .modal-section {
+            margin-bottom: 25px;
+        }
+        
+        .modal-section h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .modal-section p {
+            margin-bottom: 10px;
+        }
+        
+        .modal-section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-section li {
+            margin-bottom: 8px;
+        }
+        
+        .contact-info {
+            text-align: center;
+            padding: 20px;
+            background: var(--light);
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        
+        .email-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--primary);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .email-link:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
@@ -636,6 +753,10 @@
             
             .multi-image-controls {
                 flex-direction: column;
+            }
+            
+            .modal-content {
+                width: 95%;
             }
         }
     </style>
@@ -797,11 +918,180 @@
         <footer>
             <div>&copy; 2024 Convertina. All rights reserved.</div>
             <div class="footer-links">
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms of Service</a>
-                <a href="#">Contact Us</a>
+                <a id="privacyLink">Privacy Policy</a>
+                <a id="termsLink">Terms of Service</a>
+                <a id="contactLink">Contact Us</a>
             </div>
         </footer>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div class="modal" id="privacyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Privacy Policy</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3>Your Privacy Matters</h3>
+                    <p>At Convertina, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we handle your data when you use our file conversion services.</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Information We Collect</h3>
+                    <p>Convertina is designed with your privacy in mind:</p>
+                    <ul>
+                        <li><strong>No File Storage:</strong> Your files are processed entirely in your browser and never uploaded to our servers</li>
+                        <li><strong>No Personal Data Collection:</strong> We do not collect, store, or share any personal information</li>
+                        <li><strong>Local Processing:</strong> All file conversions happen locally on your device</li>
+                    </ul>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>How We Process Your Files</h3>
+                    <p>When you use Convertina to convert files:</p>
+                    <ul>
+                        <li>Files are loaded directly into your browser's memory</li>
+                        <li>Conversion happens entirely on your device</li>
+                        <li>Files are automatically removed from memory after conversion</li>
+                        <li>We never have access to your files or their contents</li>
+                    </ul>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Third-Party Services</h3>
+                    <p>We use jsPDF library for PDF generation, which operates entirely within your browser. No data is sent to external servers during the conversion process.</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Changes to This Policy</h3>
+                    <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated revision date.</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Contact Us</h3>
+                    <p>If you have any questions about this Privacy Policy, please contact us at:</p>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> Email: convertinaoff@gmail.com</p>
+                    </div>
+                </div>
+                
+                <div class="modal-section">
+                    <p><em>Last updated: December 2024</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Service Modal -->
+    <div class="modal" id="termsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Terms of Service</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3>Acceptance of Terms</h3>
+                    <p>By accessing and using Convertina, you accept and agree to be bound by the terms and provision of this agreement.</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Description of Service</h3>
+                    <p>Convertina provides a web-based file conversion service that allows users to convert images between different formats and combine multiple images into PDF documents. The service operates entirely within your web browser.</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>User Responsibilities</h3>
+                    <p>As a user of Convertina, you agree to:</p>
+                    <ul>
+                        <li>Use the service only for lawful purposes</li>
+                        <li>Not upload any malicious or harmful files</li>
+                        <li>Respect intellectual property rights</li>
+                        <li>Not attempt to reverse engineer or disrupt the service</li>
+                    </ul>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Service Limitations</h3>
+                    <p>Convertina is provided "as is" without any warranties. We do not guarantee:</p>
+                    <ul>
+                        <li>Uninterrupted service availability</li>
+                        <li>Specific conversion results or quality</li>
+                        <li>Compatibility with all file types or sizes</li>
+                    </ul>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Intellectual Property</h3>
+                    <p>You retain all rights to the files you convert using Convertina. We claim no ownership over any content you process through our service.</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Limitation of Liability</h3>
+                    <p>Convertina shall not be liable for any indirect, incidental, special, consequential or punitive damages resulting from your use of or inability to use the service.</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Contact Information</h3>
+                    <p>For any questions regarding these Terms of Service, please contact us at:</p>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> Email: convertinaoff@gmail.com</p>
+                    </div>
+                </div>
+                
+                <div class="modal-section">
+                    <p><em>Last updated: December 2024</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Us Modal -->
+    <div class="modal" id="contactModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Contact Us</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3>We'd Love to Hear From You!</h3>
+                    <p>Have questions, suggestions, or need support? Feel free to reach out to us. We're here to help!</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Get in Touch</h3>
+                    <p>You can contact us directly via email. We typically respond within 24-48 hours.</p>
+                    
+                    <div class="contact-info">
+                        <h4><i class="fas fa-envelope"></i> Email Address</h4>
+                        <p>Send us an email at:</p>
+                        <a href="mailto:convertinaoff@gmail.com" class="email-link">
+                            <i class="fas fa-paper-plane"></i>
+                            convertinaoff@gmail.com
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>What We Can Help With</h3>
+                    <ul>
+                        <li>Technical support and troubleshooting</li>
+                        <li>Feature requests and suggestions</li>
+                        <li>Privacy and security questions</li>
+                        <li>Partnership opportunities</li>
+                        <li>General inquiries about Convertina</li>
+                    </ul>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Feedback Welcome</h3>
+                    <p>We're constantly working to improve Convertina. Your feedback helps us make the service better for everyone. Don't hesitate to share your thoughts!</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -830,8 +1120,51 @@
             const imageCount = document.getElementById('imageCount');
             const multiImageInfo = document.getElementById('multiImageInfo');
             
+            // Modal elements
+            const privacyLink = document.getElementById('privacyLink');
+            const termsLink = document.getElementById('termsLink');
+            const contactLink = document.getElementById('contactLink');
+            const privacyModal = document.getElementById('privacyModal');
+            const termsModal = document.getElementById('termsModal');
+            const contactModal = document.getElementById('contactModal');
+            const closeButtons = document.querySelectorAll('.close-modal');
+            
             let selectedFiles = [];
             let selectedFormat = null;
+
+            // Modal functionality
+            privacyLink.addEventListener('click', () => {
+                privacyModal.style.display = 'flex';
+            });
+            
+            termsLink.addEventListener('click', () => {
+                termsModal.style.display = 'flex';
+            });
+            
+            contactLink.addEventListener('click', () => {
+                contactModal.style.display = 'flex';
+            });
+            
+            closeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    privacyModal.style.display = 'none';
+                    termsModal.style.display = 'none';
+                    contactModal.style.display = 'none';
+                });
+            });
+            
+            // Close modal when clicking outside content
+            window.addEventListener('click', (e) => {
+                if (e.target === privacyModal) {
+                    privacyModal.style.display = 'none';
+                }
+                if (e.target === termsModal) {
+                    termsModal.style.display = 'none';
+                }
+                if (e.target === contactModal) {
+                    contactModal.style.display = 'none';
+                }
+            });
 
             // File handling
             uploadArea.addEventListener('click', () => fileInput.click());
