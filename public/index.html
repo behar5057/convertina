@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convertina - Beautiful File Conversion Platform</title>
+    <title>Convertina - Multi-Image File Conversion Platform</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -38,7 +38,7 @@
         
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1100px;
             background-color: rgba(255, 255, 255, 0.95);
             border-radius: 24px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
@@ -510,6 +510,98 @@
             color: var(--primary-dark);
         }
         
+        /* Multi-image styles */
+        .multi-image-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .multi-image-btn {
+            background: var(--light);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .multi-image-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .selected-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .image-thumbnail {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            aspect-ratio: 1;
+        }
+        
+        .image-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255,255,255,0.8);
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--primary-dark);
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+        
+        .remove-image:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+        
+        .image-count {
+            margin-top: 15px;
+            text-align: center;
+            color: var(--gray);
+            font-weight: 600;
+        }
+        
+        .multi-image-info {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -541,6 +633,10 @@
             .btn {
                 justify-content: center;
             }
+            
+            .multi-image-controls {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -558,7 +654,7 @@
             <div class="card">
                 <div class="card-title">
                     <i class="fas fa-file-upload"></i>
-                    Upload Your File
+                    Upload Your Files
                 </div>
                 
                 <div class="upload-area" id="uploadArea">
@@ -566,27 +662,32 @@
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
                     <div class="upload-text">
-                        <h3>Drag & Drop Your File</h3>
+                        <h3>Drag & Drop Your Files</h3>
                         <p>Supported formats: JPG, PNG, GIF, WEBP</p>
+                        <p>Select multiple images to combine into one PDF</p>
                     </div>
-                    <input type="file" id="fileInput" style="display: none;" accept="image/*">
+                    <input type="file" id="fileInput" style="display: none;" accept="image/*" multiple>
                 </div>
                 
-                <div class="file-info" id="fileInfo">
-                    <div class="file-details">
-                        <div class="file-icon">
-                            <i class="fas fa-file-image"></i>
-                        </div>
-                        <div class="file-meta">
-                            <div class="file-name" id="fileName"></div>
-                            <div class="file-size" id="fileSize"></div>
-                        </div>
-                        <div class="file-action">
-                            <button class="btn" style="padding: 10px 20px; font-size: 0.9rem;">
-                                <i class="fas fa-sync-alt"></i> Change
-                            </button>
-                        </div>
-                    </div>
+                <div class="multi-image-controls">
+                    <button class="multi-image-btn" id="addMoreBtn">
+                        <i class="fas fa-plus"></i> Add More Images
+                    </button>
+                    <button class="multi-image-btn" id="clearAllBtn">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+                
+                <div class="multi-image-info" id="multiImageInfo">
+                    <i class="fas fa-info-circle"></i> Multiple images selected. They will be combined into a single PDF file.
+                </div>
+                
+                <div class="selected-images" id="selectedImages">
+                    <!-- Image thumbnails will be added here -->
+                </div>
+                
+                <div class="image-count" id="imageCount">
+                    No images selected
                 </div>
 
                 <div class="preview-area" id="previewArea">
@@ -685,10 +786,10 @@
                 </div>
                 <div class="feature">
                     <div class="feature-icon">
-                        <i class="fas fa-heart"></i>
+                        <i class="fas fa-images"></i>
                     </div>
-                    <h4>User Friendly</h4>
-                    <p>Beautiful interface designed for the best user experience</p>
+                    <h4>Multi-Image PDF</h4>
+                    <p>Combine multiple images into a single PDF document</p>
                 </div>
             </div>
         </div>
@@ -723,8 +824,13 @@
             const formatOptions = document.querySelectorAll('.format-option');
             const successMessage = document.getElementById('successMessage');
             const steps = document.querySelectorAll('.step');
+            const addMoreBtn = document.getElementById('addMoreBtn');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const selectedImages = document.getElementById('selectedImages');
+            const imageCount = document.getElementById('imageCount');
+            const multiImageInfo = document.getElementById('multiImageInfo');
             
-            let selectedFile = null;
+            let selectedFiles = [];
             let selectedFormat = null;
 
             // File handling
@@ -743,41 +849,37 @@
                 e.preventDefault();
                 uploadArea.classList.remove('active');
                 if (e.dataTransfer.files.length) {
-                    const file = e.dataTransfer.files[0];
-                    if (file.type.startsWith('image/')) {
-                        handleFileSelect(file);
-                    } else {
-                        alert('Please upload an image file (PNG, JPG, etc.) for conversion.');
-                    }
+                    handleFiles(e.dataTransfer.files);
                 }
             });
             
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files.length) {
-                    const file = e.target.files[0];
-                    if (file.type.startsWith('image/')) {
-                        handleFileSelect(file);
-                    } else {
-                        alert('Please upload an image file (PNG, JPG, etc.) for conversion.');
-                    }
+                    handleFiles(e.target.files);
                 }
             });
             
-            function handleFileSelect(file) {
-                selectedFile = file;
+            addMoreBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            clearAllBtn.addEventListener('click', () => {
+                selectedFiles = [];
+                updateSelectedImagesUI();
+                resetUI();
+            });
+            
+            function handleFiles(files) {
+                const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
                 
-                // Show file info
-                fileName.textContent = file.name;
-                fileSize.textContent = formatFileSize(file.size);
-                fileInfo.style.display = 'block';
+                if (imageFiles.length === 0) {
+                    alert('Please upload image files (PNG, JPG, etc.) for conversion.');
+                    return;
+                }
                 
-                // Show preview for images
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImage.src = e.target.result;
-                    previewArea.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+                // Add new files to selectedFiles array
+                selectedFiles = [...selectedFiles, ...imageFiles];
+                updateSelectedImagesUI();
                 
                 // Update upload area
                 uploadArea.innerHTML = `
@@ -785,7 +887,7 @@
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <div class="upload-text">
-                        <h3>File Selected!</h3>
+                        <h3>${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''} Selected!</h3>
                         <p>Ready for conversion</p>
                     </div>
                 `;
@@ -797,6 +899,90 @@
                 // Reset format selection
                 formatOptions.forEach(opt => opt.classList.remove('selected'));
                 selectedFormat = null;
+                convertButton.disabled = true;
+                downloadButton.style.display = 'none';
+                successMessage.style.display = 'none';
+            }
+            
+            function updateSelectedImagesUI() {
+                selectedImages.innerHTML = '';
+                
+                if (selectedFiles.length === 0) {
+                    imageCount.textContent = 'No images selected';
+                    multiImageInfo.style.display = 'none';
+                    previewArea.style.display = 'none';
+                    return;
+                }
+                
+                imageCount.textContent = `${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''} selected`;
+                
+                if (selectedFiles.length > 1) {
+                    multiImageInfo.style.display = 'block';
+                } else {
+                    multiImageInfo.style.display = 'none';
+                }
+                
+                selectedFiles.forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const thumbnail = document.createElement('div');
+                        thumbnail.className = 'image-thumbnail';
+                        thumbnail.innerHTML = `
+                            <img src="${e.target.result}" alt="${file.name}">
+                            <button class="remove-image" data-index="${index}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        selectedImages.appendChild(thumbnail);
+                        
+                        // Add click event to show preview
+                        thumbnail.querySelector('img').addEventListener('click', () => {
+                            previewImage.src = e.target.result;
+                            previewArea.style.display = 'block';
+                        });
+                        
+                        // Add remove event
+                        thumbnail.querySelector('.remove-image').addEventListener('click', (event) => {
+                            event.stopPropagation();
+                            removeImage(index);
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+                
+                // Show first image as preview
+                if (selectedFiles.length > 0) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewArea.style.display = 'block';
+                    };
+                    reader.readAsDataURL(selectedFiles[0]);
+                }
+            }
+            
+            function removeImage(index) {
+                selectedFiles.splice(index, 1);
+                updateSelectedImagesUI();
+                
+                if (selectedFiles.length === 0) {
+                    resetUI();
+                }
+            }
+            
+            function resetUI() {
+                uploadArea.innerHTML = `
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">
+                        <h3>Drag & Drop Your Files</h3>
+                        <p>Supported formats: JPG, PNG, GIF, WEBP</p>
+                        <p>Select multiple images to combine into one PDF</p>
+                    </div>
+                `;
+                uploadArea.classList.remove('active');
+                conversionOptions.style.display = 'none';
                 convertButton.disabled = true;
                 downloadButton.style.display = 'none';
                 successMessage.style.display = 'none';
@@ -814,7 +1000,7 @@
             
             // Conversion
             convertButton.addEventListener('click', async function() {
-                if (!selectedFile || !selectedFormat) return;
+                if (selectedFiles.length === 0 || !selectedFormat) return;
                 
                 convertButton.disabled = true;
                 progressContainer.style.display = 'block';
@@ -827,17 +1013,11 @@
                 steps.forEach(step => step.classList.remove('active'));
                 
                 try {
-                    // Read the original file
-                    const fileReader = new FileReader();
+                    // Calculate processing time based on file sizes
+                    const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+                    const processingTime = Math.max(2000, Math.min(totalSize / 1000, 15000));
                     
-                    fileReader.onload = async function(e) {
-                        // Calculate processing time based on file size
-                        const processingTime = Math.max(2000, Math.min(selectedFile.size / 1000, 10000));
-                        
-                        await simulateRealProcessing(processingTime, e.target.result);
-                    };
-                    
-                    fileReader.readAsDataURL(selectedFile);
+                    await simulateRealProcessing(processingTime);
                     
                 } catch (error) {
                     alert('Conversion failed: ' + error.message);
@@ -846,9 +1026,9 @@
                 }
             });
             
-            async function simulateRealProcessing(totalTime, originalContent) {
-                // Step 1: Reading file
-                await updateStep(0, "Reading file...", totalTime * 0.2, 25);
+            async function simulateRealProcessing(totalTime) {
+                // Step 1: Reading files
+                await updateStep(0, "Reading files...", totalTime * 0.2, 25);
                 
                 // Step 2: Processing content
                 await updateStep(1, "Processing content...", totalTime * 0.3, 50);
@@ -860,7 +1040,7 @@
                 await updateStep(3, "Finalizing conversion...", totalTime * 0.2, 100);
                 
                 // Create the actual converted file
-                createConvertedFile(originalContent);
+                createConvertedFile();
             }
             
             function updateStep(stepIndex, message, stepTime, progress) {
@@ -883,9 +1063,11 @@
                 });
             }
             
-            async function createConvertedFile(originalContent) {
-                const originalName = selectedFile.name.split('.')[0];
-                const newFileName = `${originalName}_converted.${selectedFormat}`;
+            async function createConvertedFile() {
+                const originalName = selectedFiles[0].name.split('.')[0];
+                const newFileName = selectedFiles.length > 1 
+                    ? `combined_images.pdf` 
+                    : `${originalName}_converted.${selectedFormat}`;
                 
                 let blob;
                 let mimeType = '';
@@ -909,60 +1091,144 @@
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF();
                     
-                    const img = new Image();
-                    img.onload = function() {
-                        const pageWidth = pdf.internal.pageSize.getWidth();
-                        const pageHeight = pdf.internal.pageSize.getHeight();
+                    // Process each image and add to PDF
+                    for (let i = 0; i < selectedFiles.length; i++) {
+                        const file = selectedFiles[i];
                         
-                        // Calculate image dimensions
-                        const imgWidth = img.width;
-                        const imgHeight = img.height;
-                        const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight) * 0.8;
+                        await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const img = new Image();
+                                img.onload = function() {
+                                    const pageWidth = pdf.internal.pageSize.getWidth();
+                                    const pageHeight = pdf.internal.pageSize.getHeight();
+                                    
+                                    // Calculate image dimensions
+                                    const imgWidth = img.width;
+                                    const imgHeight = img.height;
+                                    const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight) * 0.8;
+                                    
+                                    const width = imgWidth * ratio;
+                                    const height = imgHeight * ratio;
+                                    const x = (pageWidth - width) / 2;
+                                    const y = (pageHeight - height) / 2;
+                                    
+                                    // Add image to PDF
+                                    if (i > 0) {
+                                        pdf.addPage();
+                                    }
+                                    
+                                    pdf.addImage(e.target.result, 'JPEG', x, y, width, height);
+                                    
+                                    // Add page number for multi-page PDFs
+                                    if (selectedFiles.length > 1) {
+                                        pdf.setFontSize(10);
+                                        pdf.text(`Page ${i + 1} of ${selectedFiles.length}`, pageWidth - 30, pageHeight - 10);
+                                    }
+                                    
+                                    resolve();
+                                };
+                                img.src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    }
+                    
+                    // Add title page for multi-image PDFs
+                    if (selectedFiles.length > 1) {
+                        pdf.deletePage(1); // Remove the first page that was added automatically
                         
-                        const width = imgWidth * ratio;
-                        const height = imgHeight * ratio;
-                        const x = (pageWidth - width) / 2;
-                        const y = (pageHeight - height) / 2;
-                        
-                        // Add image to PDF
-                        pdf.addImage(originalContent, 'JPEG', x, y, width, height);
-                        
-                        // Add text
+                        // Add a title page
+                        pdf.addPage();
+                        pdf.setFontSize(20);
+                        pdf.text('Image Collection', 105, 50, { align: 'center' });
                         pdf.setFontSize(12);
-                        pdf.text('Converted with Convertina', 20, 20);
+                        pdf.text(`Created with Convertina - ${selectedFiles.length} images`, 105, 70, { align: 'center' });
+                        pdf.text(new Date().toLocaleDateString(), 105, 80, { align: 'center' });
                         
-                        const pdfBlob = pdf.output('blob');
-                        finalizeConversion(pdfBlob);
-                    };
-                    img.src = originalContent;
+                        // Add the images
+                        for (let i = 0; i < selectedFiles.length; i++) {
+                            const file = selectedFiles[i];
+                            
+                            await new Promise((resolve) => {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    const img = new Image();
+                                    img.onload = function() {
+                                        pdf.addPage();
+                                        
+                                        const pageWidth = pdf.internal.pageSize.getWidth();
+                                        const pageHeight = pdf.internal.pageSize.getHeight();
+                                        
+                                        // Calculate image dimensions
+                                        const imgWidth = img.width;
+                                        const imgHeight = img.height;
+                                        const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight) * 0.8;
+                                        
+                                        const width = imgWidth * ratio;
+                                        const height = imgHeight * ratio;
+                                        const x = (pageWidth - width) / 2;
+                                        const y = (pageHeight - height) / 2;
+                                        
+                                        pdf.addImage(e.target.result, 'JPEG', x, y, width, height);
+                                        
+                                        // Add page number and image info
+                                        pdf.setFontSize(10);
+                                        pdf.text(`Image ${i + 1} of ${selectedFiles.length}`, pageWidth - 40, pageHeight - 10);
+                                        pdf.text(file.name, 20, pageHeight - 10);
+                                        
+                                        resolve();
+                                    };
+                                    img.src = e.target.result;
+                                };
+                                reader.readAsDataURL(file);
+                            });
+                        }
+                    }
+                    
+                    const pdfBlob = pdf.output('blob');
+                    finalizeConversion(pdfBlob);
                     
                 } else if (selectedFormat === 'png' || selectedFormat === 'jpg') {
-                    // Image to image conversion
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        
-                        if (selectedFormat === 'jpg') {
-                            ctx.fillStyle = 'white';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        }
-                        
-                        ctx.drawImage(img, 0, 0);
-                        
-                        canvas.toBlob(function(convertedBlob) {
-                            finalizeConversion(convertedBlob);
-                        }, mimeType, selectedFormat === 'jpg' ? 0.9 : 1.0);
+                    // For single image conversion to PNG/JPG
+                    if (selectedFiles.length > 1) {
+                        alert('Multiple images can only be converted to PDF format. Converting the first image only.');
+                    }
+                    
+                    const file = selectedFiles[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            
+                            if (selectedFormat === 'jpg') {
+                                ctx.fillStyle = 'white';
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            }
+                            
+                            ctx.drawImage(img, 0, 0);
+                            
+                            canvas.toBlob(function(convertedBlob) {
+                                finalizeConversion(convertedBlob);
+                            }, mimeType, selectedFormat === 'jpg' ? 0.9 : 1.0);
+                        };
+                        img.src = e.target.result;
                     };
-                    img.src = originalContent;
+                    reader.readAsDataURL(file);
                 }
             }
             
             function finalizeConversion(blob) {
-                const originalName = selectedFile.name.split('.')[0];
-                const newFileName = `${originalName}_converted.${selectedFormat}`;
+                const originalName = selectedFiles[0].name.split('.')[0];
+                const newFileName = selectedFiles.length > 1 
+                    ? `combined_images.pdf` 
+                    : `${originalName}_converted.${selectedFormat}`;
+                    
                 const convertedFileUrl = URL.createObjectURL(blob);
                 
                 // Setup download button
