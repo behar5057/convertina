@@ -257,6 +257,16 @@
             margin-bottom: 20px;
             text-align: center;
         }
+
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -312,6 +322,9 @@
                         <small>Text File</small>
                     </div>
                 </div>
+                <div class="warning" id="pdfWarning">
+                    ⚠️ PDF conversion works best with JPG/PNG images. Large files may take longer to process.
+                </div>
             </div>
             
             <div class="action-buttons">
@@ -361,7 +374,7 @@
     </div>
 
     <script>
-        // Simple PDF generator that creates working PDFs with images
+        // Fixed PDF generator with proper encoding
         function imageToPDF(imageData, filename) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -369,8 +382,8 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    // Set canvas size to image size (max 600px width for PDF)
-                    const maxWidth = 600;
+                    // Set canvas size to image size (max 800px width for PDF)
+                    const maxWidth = 800;
                     const scale = Math.min(maxWidth / img.width, 1);
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
@@ -379,7 +392,7 @@
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     
                     // Get image as base64
-                    const imageBase64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                    const imageBase64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
                     
                     // Create PDF with the image
                     const pdfContent = createPDFWithImage(imageBase64, canvas.width, canvas.height, filename);
@@ -394,6 +407,11 @@
             const pdfWidth = Math.min(width * 0.75, 500);
             const pdfHeight = Math.min(height * 0.75, 700);
             
+            // Clean filename for PDF - remove special characters
+            const cleanFilename = filename.replace(/[^\w\s.-]/g, '');
+            const currentDate = new Date().toLocaleDateString();
+            
+            // Create a SIMPLE PDF with just the image - no text to avoid encoding issues
             const pdf = `%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
@@ -404,7 +422,7 @@ endobj
 endobj
 
 3 0 obj
-<< /Type /Page /Parent 2 0 R /Resources << /XObject << /I1 4 0 R >> >> /MediaBox [0 0 ${pdfWidth + 100} ${pdfHeight + 150}] /Contents 5 0 R >>
+<< /Type /Page /Parent 2 0 R /Resources << /XObject << /Im1 4 0 R >> >> /MediaBox [0 0 ${pdfWidth + 20} ${pdfHeight + 20}] /Contents 5 0 R >>
 endobj
 
 4 0 obj
@@ -415,45 +433,101 @@ endstream
 endobj
 
 5 0 obj
-<< /Length 200 >>
+<< /Length 44 >>
 stream
-BT
-/F1 16 Tf
-50 ${pdfHeight + 100} Td
-(🌸 Convertina - ${filename}) Tj
-0 -25 Td
-/F1 12 Tf
-(Image converted to PDF) Tj
-0 -20 Td
-(${new Date().toLocaleString()}) Tj
-ET
 q
-${pdfWidth} 0 0 ${pdfHeight} 50 50 cm
-/I1 Do
+${pdfWidth} 0 0 ${pdfHeight} 10 10 cm
+/Im1 Do
 Q
 endstream
 endobj
 
-6 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-
 xref
-0 7
+0 6
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
 0000000115 00000 n 
-0000000250 00000 n 
+0000000270 00000 n 
 0000000450 00000 n 
-0000000650 00000 n 
 trailer
-<< /Size 7 /Root 1 0 R >>
+<< /Size 6 /Root 1 0 R >>
 startxref
-${800 + imageBase64.length}
+${500 + imageBase64.length}
 %%EOF`;
 
             return pdf;
+        }
+
+        // Alternative PDF generation using jsPDF library approach (simulated)
+        function createSimplePDF(imageData, filename) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Set canvas size
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Convert to data URL
+                    const imageUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    // Create a simple PDF structure that focuses on the image only
+                    // This avoids text encoding issues
+                    const pdfContent = generateImageOnlyPDF(imageUrl, filename);
+                    resolve(pdfContent);
+                };
+                img.src = imageData;
+            });
+        }
+
+        function generateImageOnlyPDF(imageDataUrl, filename) {
+            // Extract base64 data
+            const base64Data = imageDataUrl.split(',')[1];
+            const binaryData = atob(base64Data);
+            
+            // Simple PDF with minimal text - using only ASCII characters
+            const pdfHeader = `%PDF-1.4
+1 0 obj
+<</Type/Catalog/Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type/Pages/Kids[3 0 R]/Count 1>>
+endobj
+3 0 obj
+<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources<</XObject<</I1 4 0 R>>>>/Contents 5 0 R>>
+endobj
+4 0 obj
+<</Type/XObject/Subtype/Image/Width 500/Height 600/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${binaryData.length}>>
+stream
+`;
+            const pdfFooter = `
+endstream
+endobj
+5 0 obj
+<</Length 51>>
+stream
+q 500 0 0 600 56 72 cm /I1 Do Q
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000060 00000 n 
+0000000125 00000 n 
+0000000250 00000 n 
+0000000450 00000 n 
+trailer
+<</Size 6/Root 1 0 R>>
+startxref
+${550 + binaryData.length}
+%%EOF`;
+
+            return pdfHeader + binaryData + pdfFooter;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -475,11 +549,12 @@ ${800 + imageBase64.length}
             const formatOptions = document.querySelectorAll('.format-option');
             const successMessage = document.getElementById('successMessage');
             const steps = document.querySelectorAll('.step');
+            const pdfWarning = document.getElementById('pdfWarning');
             
             let selectedFile = null;
             let selectedFormat = null;
 
-            // File selection - Only images allowed for PDF conversion
+            // File selection
             uploadArea.addEventListener('click', () => fileInput.click());
             
             uploadArea.addEventListener('dragover', (e) => {
@@ -499,7 +574,7 @@ ${800 + imageBase64.length}
                     if (file.type.startsWith('image/')) {
                         handleFileSelect(file);
                     } else {
-                        alert('Please upload an image file (PNG, JPG, etc.) for PDF conversion.');
+                        alert('Please upload an image file (PNG, JPG, etc.) for conversion.');
                     }
                 }
             });
@@ -510,7 +585,7 @@ ${800 + imageBase64.length}
                     if (file.type.startsWith('image/')) {
                         handleFileSelect(file);
                     } else {
-                        alert('Please upload an image file (PNG, JPG, etc.) for PDF conversion.');
+                        alert('Please upload an image file (PNG, JPG, etc.) for conversion.');
                     }
                 }
             });
@@ -557,6 +632,9 @@ ${800 + imageBase64.length}
                     option.classList.add('selected');
                     selectedFormat = option.dataset.format;
                     convertButton.disabled = false;
+                    
+                    // Show/hide PDF warning
+                    pdfWarning.style.display = selectedFormat === 'pdf' ? 'block' : 'none';
                 });
             });
             
@@ -579,7 +657,7 @@ ${800 + imageBase64.length}
                     
                     fileReader.onload = async function(e) {
                         // Calculate processing time based on file size
-                        const processingTime = Math.max(3000, Math.min(selectedFile.size / 500, 15000));
+                        const processingTime = Math.max(2000, Math.min(selectedFile.size / 1000, 10000));
                         
                         await simulateRealProcessing(processingTime, e.target.result);
                     };
@@ -655,13 +733,14 @@ ${800 + imageBase64.length}
                 
                 // HANDLE ALL CONVERSIONS
                 if (selectedFormat === 'pdf') {
-                    // Image to PDF conversion
+                    // Use the simplified PDF generation to avoid encoding issues
                     try {
                         const pdfContent = await imageToPDF(originalContent, selectedFile.name);
                         blob = new Blob([pdfContent], { type: mimeType });
                         finalizeConversion(blob);
                     } catch (error) {
-                        alert('PDF conversion failed: ' + error.message);
+                        console.error('PDF conversion error:', error);
+                        alert('PDF conversion failed. Please try with a different image or format.');
                         convertButton.disabled = false;
                         progressContainer.style.display = 'none';
                     }
@@ -674,6 +753,13 @@ ${800 + imageBase64.length}
                         canvas.width = img.width;
                         canvas.height = img.height;
                         const ctx = canvas.getContext('2d');
+                        
+                        // Fill with white background for JPG
+                        if (selectedFormat === 'jpg') {
+                            ctx.fillStyle = 'white';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
+                        
                         ctx.drawImage(img, 0, 0);
                         
                         canvas.toBlob(function(convertedBlob) {
@@ -696,8 +782,8 @@ Conversion date: ${new Date().toLocaleString()}
 This image was converted to text format. 
 In a full implementation, OCR technology could extract text from the image.
 
-Thank you for using Convertina! 🌸`;
-                    
+Thank you for using Convertina!`;
+
                     blob = new Blob([content], { type: mimeType });
                     finalizeConversion(blob);
                 }
@@ -740,9 +826,10 @@ Thank you for using Convertina! 🌸`;
                 const ext = filename.split('.').pop().toLowerCase();
                 const types = {
                     'jpg': 'JPEG Image', 'jpeg': 'JPEG Image', 'png': 'PNG Image', 
-                    'gif': 'GIF Image', 'webp': 'WebP Image', 'bmp': 'BMP Image'
+                    'gif': 'GIF Image', 'webp': 'WebP Image', 'bmp': 'BMP Image',
+                    'pdf': 'PDF Document', 'txt': 'Text File'
                 };
-                return types[ext] || `${ext.toUpperCase()} Image`;
+                return types[ext] || `${ext.toUpperCase()} File`;
             }
         });
     </script>
