@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://behar5057.github.io/convertina/sitemap.xml
